@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <meta charset=utf-8>
+<head>
+    <meta name="description" content="D3.js v4, transition, color, location" />
+    <style>
+      body {
+        margin: 0;
+      }
+    </style>
+</head>
+
+<body>
+    <svg id="canvas" width="800" height="500"></svg>
+    <script src="http://d3js.org/d3.v4.min.js"></script>
+    <!-- .attrs() -->
+    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+    <script>
+        var data0 = [
+                { gpa: 3.42, height: 138 },
+                { gpa: 3.54, height: 153 },
+                { gpa: 3.14, height: 148 },
+                { gpa: 2.76, height: 164 },
+                { gpa: 2.95, height: 162 },
+                { gpa: 3.36, height: 143 }
+        ]
+
+        var data1 = [
+            { gpa: 3.15, height: 157 },
+            { gpa: 3.12, height: 175 },
+            { gpa: 3.67, height: 167 },
+            { gpa: 3.85, height: 149 },
+            { gpa: 2.32, height: 165 },
+            { gpa: 3.01, height: 171 },
+            { gpa: 3.54, height: 168 },
+            { gpa: 2.89, height: 180 },
+            { gpa: 3.75, height: 153 }
+        ]
+
+        var circles = d3.select("#canvas").selectAll("circle")
+            .data(data0);
+
+        circles.enter().append("circle")
+            .attr("cx", function(d, i){ return 25 + (50 * i); })
+            .attr("cy", function(d, i){ return 25 + (50 * i); })
+            .attr("r", 5)
+            .attr("fill", "grey");
+    </script>
+</body>
+</html>
