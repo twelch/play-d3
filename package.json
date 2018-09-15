@@ -1,0 +1,24 @@
+{
+  "name": "d3-video-overlay",
+  "version": "0.0.1",
+  "description": "Overlay objects in sync with video using FlatBuffer encoded text track cues",
+  "dependencies": {
+    "base64-js": "^1.3.0",
+    "flatbuffers": "^1.9.0",
+    "http-server": "^0.11.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "http-server ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twelch/play-d3.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/twelch/play-d3/issues"
+  },
+  "homepage": "https://github.com/twelch/play-d3#readme"
+}

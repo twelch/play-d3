@@ -1,0 +1,19 @@
+namespace VideoEl;
+
+struct Position {
+  x: float;
+  y: float;
+}
+
+struct Size {
+  height: float;
+  width: float;
+}
+
+table Box {
+  uuid: string;
+  Position: Position;
+  Size: Size;
+}
+
+root_type Box;

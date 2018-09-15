@@ -2,7 +2,7 @@
 <html>
     <meta charset=utf-8>
 <head>
-    <meta name="description" content="D3.js v4, transition, color, location" />
+    <meta name="description" content="Video overlay of box events from Flatbuffer" />
     <style>
       body {
         margin: 0;
@@ -21,8 +21,7 @@
         left: 0;
         z-index: 1000;
         pointer-events: none;
-        background-color: gray;
-        opacity: 0.75
+        opacity: 1;
       }
       #video {
         width: 100%;
@@ -41,7 +40,82 @@
     </div>
     <script src="http://d3js.org/d3.v4.js"></script>
     <script src="https://d3js.org/d3-selection-multi.v1.js"></script>
+    <script src="schema/box_generated.js"></script>
+    <script src="node_modules/flatbuffers/js/flatbuffers.js"></script>
+    <script src="node_modules/base64-js/base64js.min.js"></script>
     <script>
+    
+    // Generate array of base64-encoded FlatBuffers
+    // Simulates what low-bandwidth WebVTT server/client would provide
+    var timedEvents = [
+      {
+        "start": 1,
+        "end": 2,
+        "events": [
+          {"uuid": "a", "x": 10, "y": 10, "height": 20, "width": 40, "fill": "red"},
+          {"uuid": "b", "x": 10, "y": 40, "height": 20, "width": 40, "fill": "blue"}
+        ]
+      },
+      {
+        "start": 2,
+        "end": 3,
+        "events": [
+          {"uuid": "a", "x": 35, "y": 20, "height": 20, "width": 40, "fill": "red"},
+          {"uuid": "b", "x": 36, "y": 50, "height": 20, "width": 40, "fill": "blue"}
+        ]
+      },
+      {
+        "start": 3,
+        "end": 4,
+        "events": [
+          {"uuid": "a", "x": 47, "y": 15, "height": 20, "width": 40, "fill": "red"},
+          {"uuid": "b", "x": 55, "y": 55, "height": 20, "width": 40, "fill": "blue"}
+        ]
+      },
+      {
+        "start": 4,
+        "end": 5,
+        "events": [
+          {"uuid": "a", "x": 97, "y": 20, "height": 20, "width": 40, "fill": "red"},
+          {"uuid": "c", "x": 10, "y": 40, "height": 25, "width": 60, "fill": "green"}
+        ]
+      },
+      {
+        "start": 5,
+        "end": 6,
+        "events": [
+          {"uuid": "a", "x": 117, "y": 18, "height": 20, "width": 40, "fill": "red"},
+          {"uuid": "c", "x": 54, "y": 45, "height": 25, "width": 60, "fill": "green"}
+        ]
+      },
+      {
+        "start": 6,
+        "end": 7,
+        "events": [
+          {"uuid": "a", "x": 100, "y": 18, "height": 20, "width": 40, "fill": "red"},
+          {"uuid": "c", "x": 84, "y": 48, "height": 25, "width": 60, "fill": "green"}
+        ]
+      }
+    ]
+
+    // Overwrite event objects in-place with FlatBuffers encoded to base64
+    timedEvents.forEach(function (tb) {
+      tb.events.forEach (function(e, index) {
+        // Create using builder
+        var builder = new flatbuffers.Builder(1024)
+        var uuid = builder.createString(e.uuid)
+        VideoEl.Box.startBox(builder)
+        VideoEl.Box.addPosition(builder, VideoEl.Position.createPosition(builder, e.x, e.y))
+        VideoEl.Box.addSize(builder, VideoEl.Size.createSize(builder, e.height, e.width))
+        VideoEl.Box.addUuid(builder, uuid)
+        var box = VideoEl.Box.endBox(builder)
+        builder.finish(box)
+
+        var buf = builder.asUint8Array() // Generate buffer
+        var base64Data = base64js.fromByteArray(buf) // Encode to base64
+        tb.events[index] = base64Data
+      })
+    })
 
     var video = document.querySelector('video');
     var videoEl = document.getElementById('video')
@@ -61,17 +135,29 @@
     track.oncuechange = function () {
       var cue = this.activeCues[0]
       if (cue) {
-        update(JSON.parse(cue.text))
+        var te = JSON.parse(cue.text)
+        te.forEach( (base64Data, index) => {      
+          var arr = base64js.toByteArray(base64Data) // Decode from base64
+          var buf = new flatbuffers.ByteBuffer(arr) // Generate FlatBuffer from Uint8 Byte Array
+          var boxAcc = VideoEl.Box.getRootAsBox(buf) // Get accessor to root Box object inside buffer
+          var box = {
+            uuid: boxAcc.uuid(),
+            x: boxAcc.Position().x(),
+            y: boxAcc.Position().y(),
+            height: boxAcc.Size().height(),
+            width: boxAcc.Size().width(),
+            fill: 'red'
+          }
+          te[index] = box
+        })
+        update(te)
       }
     }
 
-    // Add event cues
-    track.addCue(new VTTCue(1, 2, '[{"uuid": "a", "x": 10, "y": 10, "height": 20, "width": 40, "fill": "red"},{"uuid": "b", "x": 10, "y": 40, "height": 20, "width": 40, "fill": "blue"}]'));
-    track.addCue(new VTTCue(2, 3, '[{"uuid": "a", "x": 35, "y": 20, "height": 20, "width": 40, "fill": "red"},{"uuid": "b", "x": 36, "y": 50, "height": 20, "width": 40, "fill": "blue"}]'));
-    track.addCue(new VTTCue(3, 4, '[{"uuid": "a", "x": 47, "y": 15, "height": 20, "width": 40, "fill": "red"},{"uuid": "b", "x": 55, "y": 55, "height": 20, "width": 40, "fill": "blue"}]'));
-    track.addCue(new VTTCue(4, 5, '[{"uuid": "a", "x": 97, "y": 20, "height": 20, "width": 40, "fill": "red"},{"uuid": "c", "x": 10, "y": 40, "height": 25, "width": 60, "fill": "green"}]'));
-    track.addCue(new VTTCue(5, 6, '[{"uuid": "a", "x": 117, "y": 18, "height": 20, "width": 40, "fill": "red"},{"uuid": "c", "x": 54, "y": 45, "height": 25, "width": 60, "fill": "green"}]'));
-    track.addCue(new VTTCue(6, 7, '[{"uuid": "a", "x": 100, "y": 18, "height": 20, "width": 40, "fill": "red"},{"uuid": "c", "x": 84, "y": 48, "height": 25, "width": 60, "fill": "green"}]'));
+    // Add events to text track
+    timedEvents.forEach( (te) => {
+      track.addCue(new VTTCue(te.start, te.end, JSON.stringify(te.events)));
+    })
 
     var curEvent = 0
 
